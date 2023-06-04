@@ -73,25 +73,12 @@ public class OperationSequence implements java.lang.Comparable{
     public int compareTo(Object o) {
 
         int count1 = 0;
-                int count2 = 0;
-        char[] chars = {'+','-','*', '%'};
+        int count2 = 0;
 
-        for(char c:chars) {
-            for (int i = 0; i < StrSequence.length(); i++) {
-                if (StrSequence.charAt(i) == c) {
-                    count1++;
-                }
-            }
-        }
+        count1 = getNumOperations();
 
         OperationSequence obj = (OperationSequence)o;
-        for(char c:chars) {
-            for (int i = 0; i < obj.StrSequence.length(); i++) {
-                if (obj.StrSequence.charAt(i) == c) {
-                    count2++;
-                }
-            }
-        }
+        count2 = obj.getNumOperations();
 
         return count1-count2;
     }
