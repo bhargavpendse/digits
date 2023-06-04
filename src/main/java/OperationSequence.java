@@ -53,6 +53,21 @@ public class OperationSequence implements java.lang.Comparable{
     }
 
 
+    public int getNumOperations() {
+        int count = 0;
+
+        char[] chars = {'+','-','*', '%'};
+        for(char c:chars) {
+            for (int i = 0; i < StrSequence.length(); i++) {
+                if (StrSequence.charAt(i) == c) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
 
     @Override
     public int compareTo(Object o) {

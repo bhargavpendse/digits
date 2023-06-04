@@ -1,33 +1,37 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class digits {
 
     static int cnt = 0;
 
-    public static  puzzle getDataOnCommandLine() {
-        System.out.println("Enter target number \n");
-        Scanner sc= new Scanner(System.in);
-        puzzle p = new puzzle();
 
-        float t  = sc.nextInt();
-        p.setTarget(t);
-        //System.out.println("Enter number of digits \n");
-        int countDigits = 6;//sc.nextInt();
-        for(int i=0;i<countDigits;i++){
-            System.out.println("Enter digit");
-            float num = sc.nextFloat();
-           // OperationSequence seq = new OperationSequence(num);
-           // sequences.add((seq));
-            p.addNumber(num);
+
+    public static List<puzzle> readPuzzlesFromFile(String path) throws IOException {
+        System.out.println("Reading puzzles from " + path);
+
+        BufferedReader br
+                = new BufferedReader(new FileReader(path));
+
+        String st;
+        List<puzzle> puzzles= new LinkedList<puzzle>();
+        while ((st = br.readLine()) != null) {
+            if(st.trim().length() == 0 ) {
+                continue;
+            }
+            puzzle p = parsePuzzle(st);
+            puzzles.add(p);
         }
-        return p;
+
+        return puzzles;
+
     }
 
-    public static puzzle getDataOnCommandLine2() {
-        System.out.println("Enter Puzzle \n");
-        Scanner sc= new Scanner(System.in);
-        String seq = sc.next();
-        String[] tokens  = seq.split(",");
+    public static puzzle parsePuzzle(String puzzleLine) {
+        String[] tokens  = puzzleLine.split(",");
         //System.out.println("Enter number of digits \n");
         int len = tokens.length;
         if(len == 0) {
@@ -39,68 +43,82 @@ public class digits {
 
         puzzle p = new puzzle();
         p.setTarget(target);
-        int countDigits = len -1;
+        int countDigits = len ;
         for(int i=1;i<countDigits;i++){
 
             float num = Float.parseFloat( tokens[i]);
             p.addNumber(num);
         }
-
         return p;
-
     }
 
+    public static puzzle getDataOnCommandLine2() {
+        System.out.println("Enter Puzzle \n");
+        Scanner sc= new Scanner(System.in);
+        String seq = sc.next();
+        puzzle p = parsePuzzle(seq);
+        return p;
+    }
 
-    public static void main(String s[]) {
+    public static OperationSequence getBestSolution(puzzle p) {
         char[] operators = {'+','-','*','%'};
-        List<OperationSequence> sequences = new LinkedList<OperationSequence>();
-        puzzle p = getDataOnCommandLine2();
+
         List<Float> numbers = p.getNumbers();
+        List<OperationSequence> sequences = new LinkedList<OperationSequence>();
 
         float target = p.getTarget();
-        System.out.println("Target = " + target);
-
         Set<OperationSequence> targetSequence = new TreeSet<OperationSequence>();
 
         for(float num: numbers){
 
-             OperationSequence seq = new OperationSequence(num);
-             sequences.add((seq));
+            OperationSequence seq = new OperationSequence(num);
+            sequences.add((seq));
 
         }
+
+
         recursiveExpand(target , sequences,operators,targetSequence);
-
-        System.out.println("Done .. found " + cnt + " solutions");
-        System.out.println("Top " +  targetSequence.size() + " equations using provided digits to get " + target);
-        int i=0;
-
-
         Iterator<OperationSequence> itr = targetSequence.iterator();
-        while (itr.hasNext())
-        {
-            itr.next().print();
-        }
+
+        return  itr.next();
 
     }
 
-    public static void printList2(float target , List<OperationSequence> list,Set<OperationSequence> targetSequence) {
-        for(OperationSequence seq:list){
-            if(seq.value == target) {
-                cnt++;
-                if(!targetSequence.contains(seq)) {
+    public static void main2(String s[]) {
+        char[] operators = {'+','-','*','%'};
+        List<OperationSequence> sequences = new LinkedList<OperationSequence>();
+        puzzle p = getDataOnCommandLine2();
 
-                    targetSequence.add(seq);
-                }
-            }
-        }
-    }
-    public static void printList(float target , List<List<OperationSequence>> sequences,Set<OperationSequence> targetSequence) {
-        for(List<OperationSequence> list:sequences){
-           printList2(target,list,targetSequence);
-        }
+        OperationSequence seq = getBestSolution(p);
+
+        seq.print();
 
     }
 
+    public static void main(String s[]) throws IOException {
+        char[] operators = {'+','-','*','%'};
+        List<OperationSequence> sequences = new LinkedList<OperationSequence>();
+
+        List<puzzle> puzzles = new LinkedList<puzzle>();
+        try {
+            puzzles = readPuzzlesFromFile("/Users/bpendse/puzzles.txt");
+        } catch(IOException e) {
+            System.out.println("Problem reading puzzles from file ");
+            System.exit(1);
+        }
+
+        System.out.println("Puzzles read");
+        long time1 = System.currentTimeMillis();
+        for(puzzle p:puzzles) {
+            System.out.println("Target = " + p.getTarget());
+            OperationSequence seq = getBestSolution(p);
+            seq.print();
+            System.out.println("===============================================");
+        }
+        long time2 = System.currentTimeMillis();
+
+        System.out.println("Solved all puzzles in " + ((time2-time1)/1000) + " Seconds");
+    }
 
 
     public static void recursiveExpand(float target , List<OperationSequence> sequences,char[] operators,Set<OperationSequence> targetSequence) {
@@ -141,22 +159,25 @@ public class digits {
 
                             OperationSequence seq = sequences.get(i).append(sequences.get(j),operators[k]);
                             if(seq.value > 0  && seq.value == Math.ceil(seq.value)) {
+
                                 list.add(seq);
+                                if(seq.value == target) {
+                                    if(!targetSequence.contains(seq)) {
+                                        targetSequence.add(seq);
+                                    }
+                                }
                                 //System.out.println(sequences.get(i).value + " " + operators[k] + " " + sequences.get(j).value + " = " + stepAnswer);
                                 count = count + 1;
                                 masterList.add(list);
+                                recursiveExpand(target,list,operators,targetSequence);
+
                             }
                         }
                     }
                 }
             }
 
-            printList(target ,masterList,targetSequence);
-            for(List<OperationSequence> list : masterList) {
-                if(list.size() != 1) {
-                    recursiveExpand(target,list,operators,targetSequence);
-                }
-            }
+
         }
 
 
